@@ -25,6 +25,14 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
+class CannotConnect(config_entries.ConfigFlowError):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(config_entries.ConfigFlowError):
+    """Error to indicate there is invalid auth."""
+
+
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input allows us to connect."""
     client = SMM9000WebSocketClient(data[CONF_HOST], data[CONF_PASSWORD])
@@ -87,11 +95,3 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
-
-
-class CannotConnect(config_entries.ConfigFlowError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(config_entries.ConfigFlowError):
-    """Error to indicate there is invalid auth."""
