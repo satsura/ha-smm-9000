@@ -14,9 +14,26 @@
 
 ## 🚀 Установка
 
+### Через HACS (рекомендуется)
+
+Если интеграция добавлена в Git репозиторий:
+
+1. Установите **HACS** (если ещё не установлен): https://hacs.xyz
+2. В HACS → **Интеграции** → **Custom repositories**
+3. Добавьте URL вашего репозитория:
+   - Repository: `https://github.com/ваш-username/ha-smm-9000`
+   - Category: **Integration**
+4. Найдите **Grand Meyer SMM-9000** и установите
+5. Перезапустите Home Assistant
+6. Добавьте интеграцию через **Настройки → Устройства и сервисы**
+
+📖 **Подробная инструкция по HACS**: См. [`HACS_INSTALLATION.md`](HACS_INSTALLATION.md)
+
+### Установка вручную
+
 **📖 Подробная инструкция**: См. файл [`INSTALLATION.md`](INSTALLATION.md)
 
-### Быстрая установка:
+#### Быстрая установка:
 
 1. **Скопируйте папку** `custom_components/smm_9000` в директорию `custom_components` вашего Home Assistant:
    
