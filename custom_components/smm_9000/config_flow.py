@@ -12,7 +12,7 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
-from .const import DOMAIN
+from .const import DOMAIN, METHOD_DEFAULTS_GET
 from .websocket_client import SMM9000WebSocketClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,18 +35,26 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         await asyncio.sleep(1)
         
         if not client.connected:
+            await client.disconnect()
             raise CannotConnect
         
-        # Попробуем получить настройки для проверки авторизации
-        response = await client.send_request("DEFAULTS_GET", {}, timeout=5)
-        await client.disconnect()
+        # Попробуем получить настройки для проверки подключения
+        response = await client.send_request(METHOD_DEFAULTS_GET, {}, timeout=5, require_auth=False)
         
         if not response or not response.get("success"):
+            await client.disconnect()
             raise InvalidAuth
         
-        return {"title": f"SMM-9000 ({data[CONF_HOST]})"}
-    except Exception as e:
         await client.disconnect()
+        return {"title": f"SMM-9000 ({data[CONF_HOST]})"}
+    except (CannotConnect, InvalidAuth):
+        raise
+    except Exception as e:
+        try:
+            await client.disconnect()
+        except Exception:
+            pass
+        _LOGGER.exception("Unexpected error validating input")
         raise CannotConnect from e
 
 
