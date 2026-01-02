@@ -1,0 +1,11 @@
+{
+  "domain": "smm_9000",
+  "name": "Grand Meyer SMM-9000",
+  "codeowners": ["@valera"],
+  "config_flow": true,
+  "documentation": "https://github.com/valera/ha-smm-9000",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "requirements": ["websockets>=11.0"],
+  "version": "1.0.0"
+}
