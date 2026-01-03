@@ -30,7 +30,6 @@ class SMM9000WebSocketClient:
         self._pending_requests: dict[str, asyncio.Future] = {}
         self._request_id = 0
         self._lock = asyncio.Lock()
-        self.sess_id: int | None = None
 
     def _get_request_id(self) -> str:
         """Get next request ID."""
