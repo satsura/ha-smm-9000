@@ -25,11 +25,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 )
 
 
-class CannotConnect(config_entries.ConfigFlowError):
+class CannotConnect(config_entries.ConfigError):
     """Error to indicate we cannot connect."""
 
 
-class InvalidAuth(config_entries.ConfigFlowError):
+class InvalidAuth(config_entries.ConfigError):
     """Error to indicate there is invalid auth."""
 
 
