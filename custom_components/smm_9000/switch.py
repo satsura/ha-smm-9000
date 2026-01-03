@@ -1,6 +1,7 @@
 """Switch platform for SMM-9000 zones."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -31,10 +32,10 @@ async def async_setup_entry(
     entities = [
         SMM9000ZoneSwitch(
             coordinator,
-            str(zone_data["id"]),
-            zone_data.get("name", f"Zone {zone_data['id']}").strip() or f"Zone {zone_data['id']}"
+            str(zone_id),
+            zone_data.get("name", f"Zone {zone_id}").strip() or f"Zone {zone_id}"
         )
-        for zone_data in zones.values()
+        for zone_id, zone_data in zones.items()
     ]
 
     async_add_entities(entities)
@@ -86,6 +87,8 @@ class SMM9000ZoneSwitch(CoordinatorEntity[SMM9000DataUpdateCoordinator], SwitchE
                 METHOD_HOME_DATA_SET, data, timeout=5, require_auth=True
             )
             if response and response.get("success"):
+                # Небольшая задержка, чтобы устройство успело обработать изменение
+                await asyncio.sleep(0.5)
                 # Запрашиваем обновление данных для получения актуального состояния
                 await self.coordinator.async_request_refresh()
                 self.async_write_ha_state()

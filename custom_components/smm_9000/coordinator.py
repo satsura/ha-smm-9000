@@ -10,7 +10,7 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DEFAULT_RECONNECT_INTERVAL, METHOD_HOME_DATA_GET, METHOD_HOME_DATA_GET
+from .const import DEFAULT_RECONNECT_INTERVAL, METHOD_HOME_DATA_GET
 from .websocket_client import SMM9000WebSocketClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,16 +51,39 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # Извлекаем зоны из списка
                 zones_list = home_data.get("list", [])
                 zones = {}
+                sensors = {}
                 for item in zones_list:
                     if item.get("type") == "zone":
                         zone_id = item.get("id")
                         if zone_id:
-                            zones[str(zone_id)] = {
+                            zones[int(zone_id)] = {
                                 "id": zone_id,
                                 "name": item.get("name", ""),
                                 "enabled": item.get("enabled", False),
                             }
+                    elif item.get("type") == "sensor":
+                        sensor_id = item.get("id")
+                        if sensor_id:
+                            # Объединяем line_one и line_two в один список items
+                            items = []
+                            # Добавляем элементы из line_one
+                            for line_item in item.get("line_one", []):
+                                items.append({
+                                    **line_item,
+                                    "type": "temperature" if "temperature" in line_item.get("image", "").lower() else "precipitation" if "precipitation" in line_item.get("image", "").lower() else "unknown"
+                                })
+                            # Добавляем элементы из line_two
+                            for line_item in item.get("line_two", []):
+                                items.append({
+                                    **line_item,
+                                    "type": "temperature" if "temperature" in line_item.get("image", "").lower() else "precipitation" if "precipitation" in line_item.get("image", "").lower() else "unknown"
+                                })
+                            sensors[int(sensor_id)] = {
+                                "id": sensor_id,
+                                "items": items,
+                            }
                 current_data["zones"] = zones
+                current_data["sensors"] = sensors
                 current_data["home_data"] = home_data
                 self.async_set_updated_data(current_data)
 
@@ -74,19 +97,41 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             response = await self.websocket_client.send_request(METHOD_HOME_DATA_GET, {}, timeout=5)
             if response and response.get("success"):
                 home_data = response.get("data", {})
-                # Извлекаем зоны из списка
+                # Извлекаем зоны и сенсоры из списка
                 zones_list = home_data.get("list", [])
                 zones = {}
+                sensors = {}
                 for item in zones_list:
                     if item.get("type") == "zone":
                         zone_id = item.get("id")
                         if zone_id:
-                            zones[str(zone_id)] = {
+                            zones[int(zone_id)] = {
                                 "id": zone_id,
                                 "name": item.get("name", ""),
                                 "enabled": item.get("enabled", False),
                             }
-                return {"zones": zones, "home_data": home_data}
+                    elif item.get("type") == "sensor":
+                        sensor_id = item.get("id")
+                        if sensor_id:
+                            # Объединяем line_one и line_two в один список items
+                            items = []
+                            # Добавляем элементы из line_one
+                            for line_item in item.get("line_one", []):
+                                items.append({
+                                    **line_item,
+                                    "type": "temperature" if "temperature" in line_item.get("image", "").lower() else "precipitation" if "precipitation" in line_item.get("image", "").lower() else "unknown"
+                                })
+                            # Добавляем элементы из line_two
+                            for line_item in item.get("line_two", []):
+                                items.append({
+                                    **line_item,
+                                    "type": "temperature" if "temperature" in line_item.get("image", "").lower() else "precipitation" if "precipitation" in line_item.get("image", "").lower() else "unknown"
+                                })
+                            sensors[int(sensor_id)] = {
+                                "id": sensor_id,
+                                "items": items,
+                            }
+                return {"zones": zones, "sensors": sensors, "home_data": home_data}
             raise UpdateFailed("Failed to fetch data")
         except Exception as err:
             raise UpdateFailed(f"Error communicating with device: {err}") from err
