@@ -89,8 +89,18 @@ class SMM9000WebSocketClient:
                 _LOGGER.info("Login successful, sess_id: %s", self.sess_id)
             else:
                 _LOGGER.error("Login failed: %s", response)
+                self.sess_id = None
         except Exception as e:
             _LOGGER.error("Login error: %s", e)
+            self.sess_id = None
+
+    async def ensure_authenticated(self) -> bool:
+        """Ensure we are authenticated. Re-login if needed."""
+        if self.sess_id is None:
+            _LOGGER.debug("No sess_id, performing login")
+            await self._login()
+            return self.sess_id is not None
+        return True
 
     async def connect(self) -> None:
         """Connect to WebSocket server."""
@@ -118,11 +128,15 @@ class SMM9000WebSocketClient:
             self.connected = False
             raise
 
-    async def send_request(self, method: str, data: dict[str, Any], timeout: int = DEFAULT_TIMEOUT, require_auth: bool = True) -> dict[str, Any] | None:
+    async def send_request(self, method: str, data: dict[str, Any], timeout: int = DEFAULT_TIMEOUT, require_auth: bool = True, retry_auth: bool = True) -> dict[str, Any] | None:
         """Send request and wait for response."""
         if not self.connected or not self.ws:
             _LOGGER.error("WebSocket not connected")
             return None
+
+        # Убеждаемся, что мы авторизованы (но не для самого логина)
+        if require_auth and method != METHOD_LOGIN:
+            await self.ensure_authenticated()
 
         request: dict[str, Any] = {"method": method, "data": data}
         
@@ -143,6 +157,18 @@ class SMM9000WebSocketClient:
 
             # Ждем ответа с таймаутом
             response = await asyncio.wait_for(future, timeout=timeout)
+            
+            # Проверяем ошибку авторизации
+            if response and not response.get("success") and require_auth and retry_auth:
+                errors = response.get("errors", {})
+                if errors.get("sess_id") == "false" or errors.get("sess_id") is False:
+                    _LOGGER.warning("Session expired, re-authenticating...")
+                    self.sess_id = None
+                    await self.ensure_authenticated()
+                    # Повторяем запрос один раз
+                    if self.sess_id is not None:
+                        return await self.send_request(method, data, timeout, require_auth, retry_auth=False)
+            
             return response
 
         except asyncio.TimeoutError:

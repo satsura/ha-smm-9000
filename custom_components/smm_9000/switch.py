@@ -96,7 +96,19 @@ class SMM9000ZoneSwitch(CoordinatorEntity[SMM9000DataUpdateCoordinator], SwitchE
                 await self.coordinator.async_request_refresh()
                 self.async_write_ha_state()
             else:
-                error_msg = response.get("message", "unknown error") if response else "no response"
+                # Извлекаем сообщение об ошибке
+                error_msg = response.get("message", "") if response else ""
+                errors = response.get("errors", {}) if response else {}
+                
+                # Формируем понятное сообщение об ошибке
+                if errors:
+                    error_parts = [f"{k}: {v}" for k, v in errors.items()]
+                    error_msg = ", ".join(error_parts) if error_parts else "unknown error"
+                elif error_msg:
+                    error_msg = error_msg
+                else:
+                    error_msg = "unknown error"
+                
                 _LOGGER.error("Failed to set zone state: %s (response: %s)", error_msg, response)
                 raise Exception(f"Failed to set zone state: {error_msg}")
         except Exception as e:
