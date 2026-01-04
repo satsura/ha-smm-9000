@@ -149,10 +149,14 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_config_entry_first_refresh(self) -> None:
         """Perform first refresh and start WebSocket connection."""
-        await self._ensure_connected()
+        # Пытаемся подключиться, но не блокируем загрузку если устройство недоступно
+        try:
+            await self._ensure_connected()
+        except UpdateFailed:
+            _LOGGER.warning("Device not available during startup, will retry in background")
         await super().async_config_entry_first_refresh()
         
-        # Запускаем задачу для поддержания соединения
+        # Запускаем задачу для поддержания соединения в фоне (не блокирует загрузку)
         if not self._reconnect_task or self._reconnect_task.done():
             self._reconnect_task = self.hass.async_create_task(self._reconnect_loop())
 
@@ -163,7 +167,11 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await asyncio.sleep(DEFAULT_RECONNECT_INTERVAL)
                 if not self.websocket_client.connected:
                     _LOGGER.info("Reconnecting to SMM-9000...")
-                    await self._ensure_connected()
+                    try:
+                        await self._ensure_connected()
+                    except UpdateFailed:
+                        _LOGGER.debug("Reconnection attempt failed, will retry later")
+                        continue
             except asyncio.CancelledError:
                 break
             except Exception as e:
