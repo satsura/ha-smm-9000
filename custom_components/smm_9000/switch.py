@@ -83,9 +83,12 @@ class SMM9000ZoneSwitch(CoordinatorEntity[SMM9000DataUpdateCoordinator], SwitchE
         }
 
         try:
+            _LOGGER.debug("Setting zone %s state to %s", self._zone_id, state)
             response = await self.coordinator.websocket_client.send_request(
                 METHOD_HOME_DATA_SET, data, timeout=5, require_auth=True
             )
+            _LOGGER.debug("Response from HOME_DATA_SET: %s", response)
+            
             if response and response.get("success"):
                 # Небольшая задержка, чтобы устройство успело обработать изменение
                 await asyncio.sleep(0.5)
@@ -94,8 +97,8 @@ class SMM9000ZoneSwitch(CoordinatorEntity[SMM9000DataUpdateCoordinator], SwitchE
                 self.async_write_ha_state()
             else:
                 error_msg = response.get("message", "unknown error") if response else "no response"
-                _LOGGER.error("Failed to set zone state: %s", error_msg)
+                _LOGGER.error("Failed to set zone state: %s (response: %s)", error_msg, response)
                 raise Exception(f"Failed to set zone state: {error_msg}")
         except Exception as e:
-            _LOGGER.error("Error setting zone state: %s", e)
+            _LOGGER.error("Error setting zone state: %s", e, exc_info=True)
             raise

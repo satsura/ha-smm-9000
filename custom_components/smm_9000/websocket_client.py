@@ -53,7 +53,12 @@ class SMM9000WebSocketClient:
                         if method in self._pending_requests:
                             future = self._pending_requests.pop(method)
                             if not future.done():
+                                _LOGGER.debug("Matching response for method %s: %s", method, data)
                                 future.set_result(data)
+                            else:
+                                _LOGGER.warning("Future for method %s already done, ignoring response", method)
+                        else:
+                            _LOGGER.debug("No pending request for method %s, response: %s", method, data)
 
                     # Вызов callback для всех сообщений
                     if self.message_callback:
