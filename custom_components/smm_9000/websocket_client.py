@@ -47,7 +47,7 @@ class SMM9000WebSocketClient:
                     data = json.loads(message)
                     _LOGGER.debug("Received message: %s", data)
 
-                    # Обработка ответов на запросы
+                    # Handle request responses
                     if "method" in data:
                         method = data.get("method")
                         if method in self._pending_requests:
@@ -60,9 +60,9 @@ class SMM9000WebSocketClient:
                         else:
                             _LOGGER.debug("No pending request for method %s, response: %s", method, data)
 
-                    # Вызов callback для всех сообщений
+                    # Call callback for all messages
                     if self.message_callback:
-                        # Callback должен быть синхронным, запускаем в executor если нужно
+                        # Callback should be synchronous, run in executor if needed
                         try:
                             self.message_callback(data)
                         except Exception as e:
@@ -117,10 +117,10 @@ class SMM9000WebSocketClient:
             self.connected = True
             _LOGGER.info("WebSocket connected")
 
-            # Запускаем задачу для приема сообщений
+            # Start task for receiving messages
             self._receive_task = asyncio.create_task(self._receive_messages())
 
-            # Выполняем авторизацию
+            # Perform authorization
             await self._login()
 
         except Exception as e:
@@ -134,19 +134,19 @@ class SMM9000WebSocketClient:
             _LOGGER.error("WebSocket not connected")
             return None
 
-        # Убеждаемся, что мы авторизованы (но не для самого логина)
+        # Ensure we are authenticated (but not for login itself)
         if require_auth and method != METHOD_LOGIN:
             await self.ensure_authenticated()
 
         request: dict[str, Any] = {"method": method, "data": data}
         
-        # Добавляем sess_id если требуется авторизация и она выполнена
+        # Add sess_id if authentication is required and completed
         if require_auth and self.sess_id is not None:
             request["sess_id"] = self.sess_id
 
-        # Создаем future для ожидания ответа
+        # Create future to wait for response
         future = asyncio.Future()
-        # Используем method как ключ для простоты
+        # Use method as key for simplicity
         self._pending_requests[method] = future
 
         try:
@@ -155,17 +155,17 @@ class SMM9000WebSocketClient:
                 _LOGGER.debug("Sending message: %s", message)
                 await self.ws.send(message)
 
-            # Ждем ответа с таймаутом
+            # Wait for response with timeout
             response = await asyncio.wait_for(future, timeout=timeout)
             
-            # Проверяем ошибку авторизации
+            # Check for authentication error
             if response and not response.get("success") and require_auth and retry_auth:
                 errors = response.get("errors", {})
                 if errors.get("sess_id") == "false" or errors.get("sess_id") is False:
                     _LOGGER.warning("Session expired, re-authenticating...")
                     self.sess_id = None
                     await self.ensure_authenticated()
-                    # Повторяем запрос один раз
+                    # Retry the request once
                     if self.sess_id is not None:
                         return await self.send_request(method, data, timeout, require_auth, retry_auth=False)
             
@@ -188,7 +188,7 @@ class SMM9000WebSocketClient:
 
         request: dict[str, Any] = {"method": method, "data": data}
         
-        # Добавляем sess_id если требуется авторизация и она выполнена
+        # Add sess_id if authentication is required and completed
         if require_auth and self.sess_id is not None:
             request["sess_id"] = self.sess_id
         

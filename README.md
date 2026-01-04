@@ -1,144 +1,116 @@
-# Home Assistant интеграция для Grand Meyer SMM-9000
+# Home Assistant Integration for Grand Meyer SMM-9000
 
-Интеграция Home Assistant для управления системой таяния снега Grand Meyer SMM-9000.
+Home Assistant integration for controlling Grand Meyer SMM-9000 snow melting system.
 
-## ✅ Статус
+## ✅ Status
 
-**Интеграция полностью готова к использованию!**
+**Integration is fully ready for use!**
 
-Все методы API найдены, протестированы и реализованы:
-- ✅ Подключение к устройству через WebSocket
-- ✅ Авторизация
-- ✅ Получение информации о зонах
-- ✅ Управление зонами (включение/выключение)
+All API methods have been found, tested, and implemented:
+- ✅ Device connection via WebSocket
+- ✅ Authentication
+- ✅ Zone information retrieval
+- ✅ Zone control (on/off)
+- ✅ Sensor values (temperature, precipitation)
 
-## 🚀 Установка
+## 🚀 Installation
 
-### Через HACS (рекомендуется)
+### Via HACS (Recommended)
 
-Если интеграция добавлена в Git репозиторий:
+If the integration is added to a Git repository:
 
-1. Установите **HACS** (если ещё не установлен): https://hacs.xyz
-2. В HACS → **Интеграции** → **Custom repositories**
-3. Добавьте URL вашего репозитория:
-   - Repository: `https://github.com/ваш-username/ha-smm-9000`
+1. Install **HACS** (if not already installed): https://hacs.xyz
+2. In HACS → **Integrations** → **Custom repositories**
+3. Add your repository URL:
+   - Repository: `https://github.com/your-username/ha-smm-9000`
    - Category: **Integration**
-4. Найдите **Grand Meyer SMM-9000** и установите
-5. Перезапустите Home Assistant
-6. Добавьте интеграцию через **Настройки → Устройства и сервисы**
+4. Find **Grand Meyer SMM-9000** and install
+5. Restart Home Assistant
+6. Add the integration via **Settings → Devices & Services**
 
-📖 **Подробная инструкция по HACS**: См. [`HACS_INSTALLATION.md`](HACS_INSTALLATION.md)
+### Manual Installation
 
-### Установка вручную
+#### Quick Installation:
 
-**📖 Подробная инструкция**: См. файл [`INSTALLATION.md`](INSTALLATION.md)
-
-#### Быстрая установка:
-
-1. **Скопируйте папку** `custom_components/smm_9000` в директорию `custom_components` вашего Home Assistant:
+1. **Copy the folder** `custom_components/smm_9000` to the `custom_components` directory of your Home Assistant:
    
-   **Для Home Assistant OS/Container:**
+   **For Home Assistant OS/Container:**
    ```bash
-   # Через SSH
+   # Via SSH
    scp -r custom_components/smm_9000 root@your-ha-ip:/config/custom_components/
    
-   # Или через Samba (Windows Network)
-   # Скопируйте в \\homeassistant\config\custom_components\
+   # Or via Samba (Windows Network)
+   # Copy to \\homeassistant\config\custom_components\
    ```
    
-   **Для Home Assistant Core:**
+   **For Home Assistant Core:**
    ```bash
    cp -r custom_components/smm_9000 ~/.homeassistant/custom_components/
    ```
 
-2. **Перезапустите Home Assistant** (обязательно!)
+2. **Restart Home Assistant** (required!)
 
-3. Перейдите в **Настройки → Устройства и сервисы → Добавить интеграцию**
+3. Go to **Settings → Devices & Services → Add Integration**
 
-4. Найдите **"Grand Meyer SMM-9000"** в списке и нажмите
+4. Find **"Grand Meyer SMM-9000"** in the list and click
 
-5. Введите параметры:
-   - **IP адрес устройства** (например: `192.168.1.166`)
-   - **Пароль** (например: `12345678`)
+5. Enter parameters:
+   - **Device IP address** (e.g., `192.168.1.166`)
+   - **Password** (e.g., `12345678`)
 
-6. Нажмите **Отправить**
+6. Click **Submit**
 
-Готово! Зоны появятся как переключатели (switches) в Home Assistant.
+Done! Zones will appear as switches in Home Assistant, and sensors will appear as sensor entities.
 
-## Настройка
+## Configuration
 
-Для настройки интеграции вам понадобятся:
-- **IP адрес устройства** (например, 192.168.1.166)
-- **Пароль** для авторизации (по умолчанию: 12345678)
+To configure the integration, you will need:
+- **Device IP address** (e.g., 192.168.1.166)
+- **Password** for authentication (default: 12345678)
 
-## Функции
+## Features
 
-- **Управление зонами** через переключатели (switches)
-- **Автоматическое обнаружение** всех зон устройства
-- **Обновление состояния** в реальном времени
-- **Поддержка автоматизаций** Home Assistant
+- **Zone control** via switches
+- **Automatic discovery** of all device zones
+- **Real-time state updates** via WebSocket
+- **Sensor values** for temperature and precipitation
+- **Home Assistant automation support**
 
-## Локальное тестирование
+## API Methods
 
-Перед установкой можно протестировать подключение:
+### Working Methods
 
-```bash
-# Установите зависимости
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
+1. **LOGIN_USER** - Authentication (returns sess_id)
+2. **DEFAULTS_GET** - Get basic information
+3. **HOME_DATA_GET** - Get zone and sensor data
+4. **HOME_DATA_SET** - Control zones
+5. **ZONES_DATA_SET** - Alternative zone control method
 
-# Базовый тест
-python test_connection.py 192.168.1.166 12345678
+## Development
 
-# Полное тестирование API
-python test_final_api.py 192.168.1.166 12345678
-```
+The integration uses:
+- `websockets` for WebSocket connections
+- Data Update Coordinator for data update management
+- Switch entities for zone control
+- Sensor entities for sensor values
 
-## Документация
-
-- **`API_ANALYSIS.md`** - Полная документация API с примерами
-- **`FINAL_ANALYSIS.md`** - Краткая сводка найденных методов
-- **`ANALYSIS_REPORT.md`** - Отчёт о проведённом анализе
-
-## API методы
-
-### Рабочие методы
-
-1. **LOGIN_USER** - Авторизация (возвращает sess_id)
-2. **DEFAULTS_GET** - Получение базовой информации
-3. **HOME_DATA_GET** - Получение данных о зонах
-4. **HOME_DATA_SET** - Управление зонами
-5. **ZONES_DATA_SET** - Альтернативный метод управления зонами
-
-Подробности в `API_ANALYSIS.md`.
-
-## Разработка
-
-Интеграция использует:
-- `websockets` для WebSocket соединений
-- Data Update Coordinator для управления обновлением данных
-- Switch entities для управления зонами
-
-## Структура проекта
+## Project Structure
 
 ```
 ha-smm-9000/
 ├── custom_components/
-│   └── smm_9000/          # Код интеграции Home Assistant
-├── test_*.py              # Тестовые скрипты
-├── API_ANALYSIS.md        # Полная документация API
-├── FINAL_ANALYSIS.md      # Краткая сводка
-└── README.md              # Этот файл
+│   └── smm_9000/          # Home Assistant integration code
+├── README.md              # This file
+└── hacs.json              # HACS metadata
 ```
 
-## Поддержка
+## Support
 
-Если возникнут проблемы:
-1. Проверьте логи Home Assistant
-2. Убедитесь, что устройство доступно по сети
-3. Проверьте правильность IP адреса и пароля
+If you encounter issues:
+1. Check Home Assistant logs
+2. Ensure the device is accessible on the network
+3. Verify the IP address and password are correct
 
-## Лицензия
+## License
 
 MIT

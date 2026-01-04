@@ -23,14 +23,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def parse_sensor_value(value_str: str) -> tuple[float | None, str]:
-    """Парсит строку значения сенсора и возвращает значение и единицу измерения."""
+    """Parse sensor value string and return value and unit."""
     if not value_str:
         return None, ""
     
-    # Удаляем пробелы
+    # Remove whitespace
     value_str = value_str.strip()
     
-    # Парсим температуру (например: "10.6C", "-2.5C")
+    # Parse temperature (e.g., "10.6C", "-2.5C")
     temp_match = re.match(r"([-+]?\d+\.?\d*)\s*C", value_str, re.IGNORECASE)
     if temp_match:
         try:
@@ -38,7 +38,7 @@ def parse_sensor_value(value_str: str) -> tuple[float | None, str]:
         except ValueError:
             pass
     
-    # Парсим числовое значение (например: "0", "100")
+    # Parse numeric value (e.g., "0", "100")
     num_match = re.match(r"([-+]?\d+\.?\d*)", value_str)
     if num_match:
         try:
@@ -57,17 +57,17 @@ async def async_setup_entry(
     """Set up SMM-9000 sensor entities."""
     coordinator: SMM9000DataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    # Получаем список сенсоров из данных координатора
+    # Get list of sensors from coordinator data
     sensors = coordinator.data.get("sensors", {}) if coordinator.data else {}
     
     if not sensors:
-        # Если сенсоры еще не загружены, запрашиваем данные
+        # If sensors are not loaded yet, request data
         await coordinator.async_request_refresh()
         sensors = coordinator.data.get("sensors", {}) if coordinator.data else {}
     
     entities = []
     
-    # Создаем entities для каждого сенсора
+    # Create entities for each sensor
     for sensor_id, sensor_data in sensors.items():
         sensor_items = sensor_data.get("items", [])
         
@@ -79,24 +79,24 @@ async def async_setup_entry(
             if not name or not value_str:
                 continue
             
-            # Определяем тип сенсора по имени или изображению
+            # Determine sensor type by name or image
             image = item.get("image", "")
             device_class = None
             unit = ""
             state_class = SensorStateClass.MEASUREMENT
             
-            # Парсим значение, чтобы определить единицу измерения
+            # Parse value to determine unit of measurement
             parsed_value, parsed_unit = parse_sensor_value(value_str)
             
             if "temperature" in image.lower() or "T" in name or parsed_unit == UnitOfTemperature.CELSIUS:
                 device_class = SensorDeviceClass.TEMPERATURE
                 unit = UnitOfTemperature.CELSIUS
             elif "precipitation" in image.lower() or "P" in name:
-                # Датчик осадков - единица не указана в значении, используем мм
+                # Precipitation sensor - unit not specified in value, use mm
                 device_class = None
                 unit = "mm"
             else:
-                # Используем единицу из парсинга значения, если есть
+                # Use unit from parsed value if available
                 unit = parsed_unit
             
             entity = SMM9000Sensor(
@@ -146,7 +146,7 @@ class SMM9000Sensor(CoordinatorEntity[SMM9000DataUpdateCoordinator], SensorEntit
         """Return the state of the sensor."""
         sensors = self.coordinator.data.get("sensors", {}) if self.coordinator.data else {}
         
-        # Находим значение сенсора по ключу
+        # Find sensor value by key
         for sensor_id, sensor_data in sensors.items():
             sensor_items = sensor_data.get("items", [])
             for idx, item in enumerate(sensor_items):

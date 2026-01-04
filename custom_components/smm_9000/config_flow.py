@@ -39,14 +39,14 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     
     try:
         await client.connect()
-        # Ждем немного для установления соединения
+        # Wait a bit for connection to establish
         await asyncio.sleep(1)
         
         if not client.connected:
             await client.disconnect()
             raise CannotConnect
         
-        # Попробуем получить настройки для проверки подключения
+        # Try to get settings to verify connection
         response = await client.send_request(METHOD_DEFAULTS_GET, {}, timeout=5, require_auth=False)
         
         if not response or not response.get("success"):

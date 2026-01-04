@@ -2,21 +2,21 @@
   "config": {
     "step": {
       "user": {
-        "title": "Настройка SMM-9000",
-        "description": "Введите параметры подключения к устройству Grand Meyer SMM-9000",
+        "title": "Configure SMM-9000",
+        "description": "Enter connection parameters for Grand Meyer SMM-9000 device",
         "data": {
-          "host": "IP адрес или хост",
-          "password": "Пароль"
+          "host": "IP address or hostname",
+          "password": "Password"
         }
       }
     },
     "error": {
-      "cannot_connect": "Не удалось подключиться к устройству",
-      "invalid_auth": "Неверный пароль",
-      "unknown": "Произошла неизвестная ошибка"
+      "cannot_connect": "Unable to connect to device",
+      "invalid_auth": "Invalid password",
+      "unknown": "Unknown error occurred"
     },
     "abort": {
-      "already_configured": "Устройство уже настроено"
+      "already_configured": "Device is already configured"
     }
   }
 }

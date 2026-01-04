@@ -25,7 +25,7 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass,
             _LOGGER,
             name="SMM-9000",
-            update_interval=None,  # Обновление через WebSocket в реальном времени
+            update_interval=None,  # Real-time updates via WebSocket
         )
         self.config_entry = entry
         self.host = entry.data[CONF_HOST]
@@ -39,16 +39,16 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Handle incoming WebSocket message."""
         _LOGGER.debug("Received WebSocket message: %s", message)
         
-        # Обновляем данные на основе сообщения
+        # Update data based on message
         current_data = self.data or {}
         
-        # Обрабатываем различные типы сообщений
+        # Process different message types
         if "method" in message:
             method = message.get("method")
             if method == "HOME_DATA_GET" and message.get("success"):
-                # Обновляем данные устройства
+                # Update device data
                 home_data = message.get("data", {})
-                # Извлекаем зоны из списка
+                # Extract zones from the list
                 zones_list = home_data.get("list", [])
                 zones = {}
                 sensors = {}
@@ -64,15 +64,15 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     elif item.get("type") == "sensor":
                         sensor_id = item.get("id")
                         if sensor_id:
-                            # Объединяем line_one и line_two в один список items
+                            # Combine line_one and line_two into a single items list
                             items = []
-                            # Добавляем элементы из line_one
+                            # Add items from line_one
                             for line_item in item.get("line_one", []):
                                 items.append({
                                     **line_item,
                                     "type": "temperature" if "temperature" in line_item.get("image", "").lower() else "precipitation" if "precipitation" in line_item.get("image", "").lower() else "unknown"
                                 })
-                            # Добавляем элементы из line_two
+                            # Add items from line_two
                             for line_item in item.get("line_two", []):
                                 items.append({
                                     **line_item,
@@ -92,12 +92,12 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self.websocket_client.connected:
             await self._ensure_connected()
         
-        # Запрашиваем текущие данные
+        # Request current data
         try:
             response = await self.websocket_client.send_request(METHOD_HOME_DATA_GET, {}, timeout=5)
             if response and response.get("success"):
                 home_data = response.get("data", {})
-                # Извлекаем зоны и сенсоры из списка
+                # Extract zones and sensors from the list
                 zones_list = home_data.get("list", [])
                 zones = {}
                 sensors = {}
@@ -113,15 +113,15 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     elif item.get("type") == "sensor":
                         sensor_id = item.get("id")
                         if sensor_id:
-                            # Объединяем line_one и line_two в один список items
+                            # Combine line_one and line_two into a single items list
                             items = []
-                            # Добавляем элементы из line_one
+                            # Add items from line_one
                             for line_item in item.get("line_one", []):
                                 items.append({
                                     **line_item,
                                     "type": "temperature" if "temperature" in line_item.get("image", "").lower() else "precipitation" if "precipitation" in line_item.get("image", "").lower() else "unknown"
                                 })
-                            # Добавляем элементы из line_two
+                            # Add items from line_two
                             for line_item in item.get("line_two", []):
                                 items.append({
                                     **line_item,
@@ -141,7 +141,7 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not self.websocket_client.connected:
             try:
                 await self.websocket_client.connect()
-                # Даем время на установление соединения и авторизацию
+                # Give time for connection and authorization
                 await asyncio.sleep(2)
             except Exception as e:
                 _LOGGER.error("Failed to connect: %s", e)
@@ -149,14 +149,14 @@ class SMM9000DataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_config_entry_first_refresh(self) -> None:
         """Perform first refresh and start WebSocket connection."""
-        # Пытаемся подключиться, но не блокируем загрузку если устройство недоступно
+        # Try to connect, but don't block startup if device is unavailable
         try:
             await self._ensure_connected()
         except UpdateFailed:
             _LOGGER.warning("Device not available during startup, will retry in background")
         await super().async_config_entry_first_refresh()
         
-        # Запускаем задачу для поддержания соединения в фоне (не блокирует загрузку)
+        # Start background task to maintain connection (does not block startup)
         if not self._reconnect_task or self._reconnect_task.done():
             self._reconnect_task = self.hass.async_create_task(self._reconnect_loop())
 

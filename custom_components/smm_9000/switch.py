@@ -25,10 +25,10 @@ async def async_setup_entry(
     """Set up SMM-9000 switch entities."""
     coordinator: SMM9000DataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    # Получаем список зон из данных устройства
+    # Get list of zones from device data
     zones = coordinator.data.get("zones", {}) if coordinator.data else {}
     
-    # Создаем entities для каждой зоны
+    # Create entities for each zone
     entities = [
         SMM9000ZoneSwitch(
             coordinator,
@@ -52,19 +52,19 @@ class SMM9000ZoneSwitch(CoordinatorEntity[SMM9000DataUpdateCoordinator], SwitchE
     ) -> None:
         """Initialize the zone switch."""
         super().__init__(coordinator)
-        self._zone_id = int(zone_id)  # ID зоны как число
-        self._zone_name = zone_name.strip() if zone_name.strip() else f"Зона {zone_id}"
+        self._zone_id = int(zone_id)  # Zone ID as integer
+        self._zone_name = zone_name.strip() if zone_name.strip() else f"Zone {zone_id}"
         self._attr_name = f"SMM-9000 {self._zone_name}"
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_zone_{zone_id}"
 
     @property
     def is_on(self) -> bool:
         """Return True if the zone is on."""
-        # Получаем состояние зоны из данных координатора
+        # Get zone state from coordinator data
         zones = self.coordinator.data.get("zones", {}) if self.coordinator.data else {}
         zone_data = zones.get(self._zone_id, {})
         
-        # Состояние хранится в поле "enabled"
+        # State is stored in the "enabled" field
         return bool(zone_data.get("enabled", False))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -90,17 +90,17 @@ class SMM9000ZoneSwitch(CoordinatorEntity[SMM9000DataUpdateCoordinator], SwitchE
             _LOGGER.debug("Response from HOME_DATA_SET: %s", response)
             
             if response and response.get("success"):
-                # Небольшая задержка, чтобы устройство успело обработать изменение
+                # Small delay to allow device to process the change
                 await asyncio.sleep(0.5)
-                # Запрашиваем обновление данных для получения актуального состояния
+                # Request data update to get current state
                 await self.coordinator.async_request_refresh()
                 self.async_write_ha_state()
             else:
-                # Извлекаем сообщение об ошибке
+                # Extract error message
                 error_msg = response.get("message", "") if response else ""
                 errors = response.get("errors", {}) if response else {}
                 
-                # Формируем понятное сообщение об ошибке
+                # Form a clear error message
                 if errors:
                     error_parts = [f"{k}: {v}" for k, v in errors.items()]
                     error_msg = ", ".join(error_parts) if error_parts else "unknown error"
